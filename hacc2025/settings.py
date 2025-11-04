@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +28,8 @@ SECRET_KEY = "django-insecure-ab@5m$b5-mj^=me7ych2g#ri&cw*vprb(%ytgd9d@6y(q4f(i@
 DEBUG = True
 
 # IMPORTANT -- API KEY IMPLEMENTATION
-GOOGLE_API_KEY = os.environ.get('GEMINI_API_KEY')
+load_dotenv()
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
 ALLOWED_HOSTS = []
 
