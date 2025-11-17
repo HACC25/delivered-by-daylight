@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UH Mānoa Course Career Pathway</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .glass {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(6px);
+    }
+
+    .chip {
+      background: rgba(2, 71, 49, 0.25);
+      border: 1px solid rgba(26, 115, 232, 0.12);
+    }
+
+    pre {
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900">
+  <div class="min-h-screen p-6 max-w-6xl mx-auto">
+    <header class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <div
+          class="w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br from-green-900 to-white-400 text-black font-bold">
+          UH</div>
+        <div>
+          <h1 class="text-2xl font-semibold">UH Mānoa Course Career Pathway</h1>
+          <p class="text-2xl text-gray-900">Kūlia i ka Nuʻu</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-12 gap-6">
+      <section class="col-span-5">
+        <div class="p-4 glass rounded-lg shadow-sm">
+          <label class="block text-xl font-medium text-gray-700 mb-2">What is your dream career?</label>
+          <div class="flex gap-2">
+            <input id="careerInput" class="flex-1 p-3 rounded-md border focus:outline-none"
+              placeholder="e.g. 'Software Engineer' or 'Graphic Designer'" />
+            <button id="searchBtn" class="px-4 py-2 rounded-md bg-green-900 text-white">Find Courses</button>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex flex-wrap gap-2">
+              <button class="chip px-3 py-1 rounded-full text-xl" onclick="prefill('Software Engineer')">Software
+                Engineer</button>
+              <button class="chip px-3 py-1 rounded-full text-xl" onclick="prefill('Nurse')">Nurse</button>
+              <button class="chip px-3 py-1 rounded-full text-xl" onclick="prefill('Teacher')">Teacher</button>
+              <button class="chip px-3 py-1 rounded-full text-xl" onclick="prefill('Business Analyst')">Business
+                Analyst</button>
+            </div>
+          </div>
+
+          <hr class="my-4" />
+          <div class="text-xl text-gray-600">
+            <p>Be specific about the careerpath to get more in depth course recommendations.</p>
+          </div>
+        </div>
+
+        <div class="mt-4 p-4 bg-white rounded-lg shadow">
+          <h3 class="text-lg font-semibold mb-3">Recommended Courses</h3>
+          <div id="courseList" class="space-y-3"></div>
+        </div>
+      </section>
+
+
+      <section class="col-span-7">
+        <div class="p-4 bg-white rounded-lg shadow flex flex-col h-[70vh]">
+          <div id="chatWindow" class="flex-1 overflow-auto p-2 space-y-3" aria-live="polite">
+            <div class="text-xl text-gray-500">Type your dream career to get course recommendations.</div>
+          </div>
+
+          <div class="mt-3">
+            <div class="flex gap-2">
+              <input id="followupInput" class="flex-1 p-2 rounded-md border" placeholder="Ask something else, e.g. 'What skills do I need for this career?'" />
+              <button id="sendBtn" class="px-4 py-2 rounded-md bg-green-900 text-white">Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mt-6 text-center text-lg text-gray-500">ONLY University of Hawaiʻi at Mānoa Courses Displayed. Check
+      Official Catalog for Semester Availability. University of Hilo and Community Colleges Check Separately.</footer>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+    // Auto-start conversation with intro question
+    fetch("/pages/gemini/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: "__start__" })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.response) {
+            appendMessage("assistant", data.response);
+        }
+    })
+    .catch(err => {
+        appendMessage("assistant", "Error starting conversation: " + err.message);
+    });
+  });
+
+
+    const courseData = {
+      'software engineer': ['Introduction to Computer Science', 'Data Structures & Algorithms', 'Operating Systems', 'Software Engineering Principles', 'Database Management', 'Web Development'],
+      'nurse': ['Human Anatomy & Physiology', 'Nursing Fundamentals', 'Pathophysiology', 'Pharmacology', 'Clinical Practice', 'Health Assessment'],
+      'teacher': ['Educational Psychology', 'Classroom Management', 'Curriculum Design', 'Child Development', 'Instructional Technology'],
+      'business analyst': ['Business Statistics', 'Data Analytics', 'Project Management', 'Financial Accounting', 'Information Systems'],
+      'data scientist': ['Linear Algebra', 'Python for Data Science', 'Machine Learning', 'Data Visualization', 'Statistics & Probability'],
+      'cybersecurity analyst': ['Network Security', 'Ethical Hacking', 'Operating Systems', 'Cryptography', 'Incident Response'],
+      'graphic designer': ['Design Fundamentals', 'Typography', 'Digital Illustration', 'Brand Identity', 'User Experience Design'],
+      'mechanical engineer': ['Physics', 'Thermodynamics', 'Materials Science', 'Fluid Mechanics', 'Engineering Design']
+    };
+
+    const courseList = document.getElementById('courseList');
+    const chatWindow = document.getElementById('chatWindow');
+    const careerInput = document.getElementById('careerInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const followupInput = document.getElementById('followupInput');
+
+    function renderCourses(career) {
+      const key = career.toLowerCase().trim();
+      const courses = courseData[key] || ['General Education Courses', 'Communication Skills', 'Critical Thinking', 'Introductory Courses in your chosen field'];
+      courseList.innerHTML = courses.map(c => `<div class='p-3 rounded-md border'>${c}</div>`).join('');
+    }
+
+    function appendMessage(who, text) {
+      const msg = document.createElement('div');
+      msg.className = who === 'user' ? 'text-right' : 'text-left';
+      msg.innerHTML = `<div class="inline-block ${who === 'user' ? 'bg-green-50' : 'bg-gray-100'} p-3 rounded-md max-w-[75%]"><div class="text-xl">${escapeHtml(text)}</div></div>`;
+      chatWindow.appendChild(msg);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function handleQuery(text) {
+      if (!text.trim()) return;
+      appendMessage('user', text);
+
+      try {
+        const response = await fetch('/pages/gemini/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text })
+        });
+        const data = await response.json();
+
+        const last = chatWindow.querySelector('div:last-child');
+        if (last && last.textContent.includes('thinking')) last.remove();
+
+        if (data.response) {
+          appendMessage('assistant', data.response);
+        } else if (data.error) {
+          appendMessage('assistant', "Error: " + data.error);
+        }
+      } catch (err) {
+        const last = chatWindow.querySelector('div:last-child');
+        if (last && last.textContent.includes('thinking')) last.remove();
+        appendMessage('assistant', "Error contacting AI: " + err.message);
+      }
+    }
+
+
+    searchBtn.addEventListener('click', () => {
+      handleQuery(careerInput.value);
+      careerInput.value = '';
+    });
+
+    sendBtn.addEventListener('click', () => {
+      if (followupInput.value.trim()) {
+        handleQuery(followupInput.value);
+        followupInput.value = '';
+      } else {
+        handleQuery(careerInput.value);
+      }
+    });
+
+    followupInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleQuery(followupInput.value);
+        followupInput.value = '';
+      }
+    });
+
+    careerInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleQuery(careerInput.value);
+        careerInput.value = '';
+      }
+    });
+
+    function prefill(t) { careerInput.value = t; }
+    function escapeHtml(unsafe) { return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('\n', '<br>'); }
+  </script>
+</body>
+
+</html>
