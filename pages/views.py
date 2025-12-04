@@ -20,11 +20,11 @@ client = genai.Client(api_key=API_KEY)
 MODEL_NAME = "gemini-2.5-flash-lite"
 
 # load csv only once
-CSV_PATH = "/Users/noelahmooksang/Desktop/pathfinder/uh_manoa_all_courses_spring2026.csv"
+CSV_PATH = "manoa_courses.csv"
 df = pd.read_csv(CSV_PATH)
 
 # build the major-to-prefix map dynamically
-unique_majors = df["Major"].unique()
+unique_majors = df["dept_name"].unique()
 major_prefix_map = {}
 
 for major in unique_majors:
@@ -33,10 +33,11 @@ for major in unique_majors:
 
 
 def build_context_for_major(major):
-    # find the prefix that matches the user's major request
+    # normalize user input
     major = major.lower()
     prefix_match = None
 
+    # find matching major prefix
     for key, prefix in major_prefix_map.items():
         if key in major:
             prefix_match = prefix
@@ -45,13 +46,26 @@ def build_context_for_major(major):
     if prefix_match is None:
         return ""
 
-    # filter dataframe by detected prefix
+    # filter rows by prefix
     matches = df[df["Course ID"].str.startswith(prefix_match, na=False)]
 
-    # create context text
     course_lines = []
     for _, row in matches.iterrows():
-        line = f"{row['Course ID']} - {row['Course Name']}"
+
+        course_id = row.get("Course ID", "")
+        name = row.get("Course Name", "")
+        desc = row.get("Description", "")
+        prereq = row.get("Prerequisites", "")
+
+        # protect against NaN
+        desc = "" if pd.isna(desc) else desc
+        prereq = "" if pd.isna(prereq) else prereq
+
+        line = f"{course_id} - {name}. Description: {desc}"
+
+        if prereq.strip():
+            line += f" Prerequisites: {prereq}"
+
         course_lines.append(line)
 
     return "\n".join(course_lines)
